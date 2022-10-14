@@ -1,2 +1,1 @@
-
-ewqewqeweqewqewq
+Public repository for Data Science projects

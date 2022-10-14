@@ -1,0 +1,1 @@
+Repository show an example of how to build and later re-use trained multivariate LSTM model builded with Pytorch (dataset is not included).

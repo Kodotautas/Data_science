@@ -1,0 +1,1 @@
+Repository show an example of how to build and later re-use trained Random Forest model (dataset is not included).
