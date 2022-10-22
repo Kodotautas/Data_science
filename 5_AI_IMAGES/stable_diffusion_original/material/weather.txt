@@ -1,0 +1,30 @@
+barometer
+blizzard
+breezy
+chilly
+clear
+cloudy
+cold front
+flurries
+fog
+forecast
+forecast
+global warming
+gust
+hail
+hazy
+heat
+high-pressure
+humid
+humidity
+hurricane
+lightning
+muggy
+overcast
+pollution
+pour
+precipitation
+rain
+rain
+shower
+smog

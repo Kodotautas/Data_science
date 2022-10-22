@@ -1,6 +1,6 @@
 import os
 from importlib.resources import path
-from click import prompt
+from pyparsing import Word
 from regex import W
 import config
 from huggingface_hub import notebook_login
@@ -21,17 +21,18 @@ print("Loading model...")
 pipe = StableDiffusionPipeline.from_pretrained(path + '/models/stable-diffusion-v1-4',
                                                 revision="fp16", 
                                                 torch_dtype=torch.float16).to("cuda")
-
+print('Model loaded.')
 
 
 # -------------------------------- GENERATE IMAGES -------------------------------- #
-#text input
-prompt = "Professor X, wearing a top hat, short shorts, muscular, D&D, fantasy, intricate, elegant, highly detailed, digital painting, artstation, concept art, matte, sharp focus, illustration, art by Artgerm and Greg Rutkowski and Alphonse Mucha"
 
-print("Generating image...")
-image = pipe(prompt).images[0] 
-
-#save image
-image.save(path + '/outputs/raw_images/' + prompt[0:30] + '.png')
-
-print("Image saved!")
+def generate_image(prompt):
+    print("Generating image...")
+    image = pipe(prompt).images[0]
+    #add metadata
+    image.metadata = {'prompt': prompt}
+    image.metadata = {'model': 'stable-diffusion-v1-4'}
+    image.metadata = {'author': 'Vytautas Lukosiunas'}
+    #save image
+    image.save(path + '/outputs/raw_images/' + prompt[0:30] + '.png')
+    return print("Image saved!")
