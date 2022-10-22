@@ -2,6 +2,9 @@ import promp_generator
 import images_generator
 # import images_tuner
 
+import warnings
+warnings.filterwarnings('ignore')
+
 #number of images to generate
 n = 3
 
@@ -18,5 +21,5 @@ def main():
 
 if __name__ == "__main__":
     for i in range(n):
-        print("Iteration: ", i, 'of', n)
+        print("%s/%s" % (i+1, n))
         main()
