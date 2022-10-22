@@ -25,7 +25,6 @@ print('Model loaded.')
 
 
 # -------------------------------- GENERATE IMAGES -------------------------------- #
-
 def generate_image(prompt):
     print("Generating image...")
     image = pipe(prompt).images[0]
@@ -35,4 +34,10 @@ def generate_image(prompt):
     image.metadata = {'author': 'Vytautas Lukosiunas'}
     #save image
     image.save(path + '/outputs/raw_images/' + prompt[0:30] + '.png')
-    return print("Image saved!")
+    #add promt and prompt[0:30] to prompts.txt
+    with open(path + '/outputs/prompts/prompts.txt', 'a') as f:
+        f.write(prompt[0:30] + '.png' + '\n')
+        f.write(prompt + '\n')
+        f.write('--------------------------------------------------' + '\n')
+        f.close()
+    return print("Image & prompt saved!")

@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 #number of images to generate
-n = 3
+n = 484
 
 # -------------------------------- APPLICATION ------------------------------- #
 def main():
