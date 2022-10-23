@@ -33,9 +33,9 @@ def generate_image(prompt):
     image.metadata = {'model': 'stable-diffusion-v1-4'}
     image.metadata = {'author': 'Vytautas Lukosiunas'}
     #save image
-    image.save(path + '/outputs/raw_images/' + prompt.split()[0] 
-                                            + prompt.split()[2] 
-                                            + prompt.split()[3] 
+    image.save(path + '/outputs/raw_images/' + prompt.split()[0]
+                                            + '_'                                            
+                                            + str(len(prompt)) 
                                             + '.png')
     #add promt and prompt[0:30] to prompts.txt
     with open(path + '/outputs/prompts/prompts.txt', 'a') as f:

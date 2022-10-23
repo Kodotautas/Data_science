@@ -6,13 +6,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 #number of images to generate
-n = 20
+n = 200
 
 # -------------------------------- APPLICATION ------------------------------- #
 def main():
     #generate main word and prompt
     # word = promp_generator.choose_word()
-    prompt = promp_generator.generate_prompts('action')
+    prompt = promp_generator.generate_prompts('global warming')
     print(prompt)
     #generate image
     images_generator.generate_image(prompt)
