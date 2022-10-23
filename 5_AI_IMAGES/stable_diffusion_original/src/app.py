@@ -12,7 +12,7 @@ n = 20
 def main():
     #generate main word and prompt
     # word = promp_generator.choose_word()
-    prompt = promp_generator.generate_prompts('scene of')
+    prompt = promp_generator.generate_prompts('action')
     print(prompt)
     #generate image
     images_generator.generate_image(prompt)

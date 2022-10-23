@@ -1,12 +1,13 @@
 import os
 from importlib.resources import path
+from random import random
 from pyparsing import Word
 from regex import W
 import config
 from huggingface_hub import notebook_login
 import torch
 import gc
-from torch import autocast, batch_norm
+from torch import autocast, batch_norm, randint
 from diffusers import StableDiffusionPipeline
 
 torch.cuda.empty_cache()
@@ -32,7 +33,10 @@ def generate_image(prompt):
     image.metadata = {'model': 'stable-diffusion-v1-4'}
     image.metadata = {'author': 'Vytautas Lukosiunas'}
     #save image
-    image.save(path + '/outputs/raw_images/' + prompt.split()[0] + '.png')
+    image.save(path + '/outputs/raw_images/' + prompt.split()[0] 
+                                            + prompt.split()[2] 
+                                            + prompt.split()[3] 
+                                            + '.png')
     #add promt and prompt[0:30] to prompts.txt
     with open(path + '/outputs/prompts/prompts.txt', 'a') as f:
         f.write(prompt[0:30] + '.png' + '\n')

@@ -14,8 +14,8 @@ model.load_weights('weights/RealESRGAN_x4.pth', download=True)
 
 
 # -------------------------------- GENERATE IMAGES -------------------------------- #
-def tune_image(image):
-    path_to_image = 'C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original/outputs/raw_images/superman.png'
+def tune_image():
+    path_to_image = "C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original/outputs/raw_images/whereas.png"
     image = Image.open(path_to_image).convert('RGB')
 
     sr_image = model.predict(image)
@@ -23,6 +23,7 @@ def tune_image(image):
     sr_image.save(path + '/outputs/upscaled_images/superman.png')
     print('Image enlarged and saved to disk.')
 
+# tune_image()
 
 
 
@@ -36,22 +37,23 @@ def tune_image(image):
 
 
 
-import os
-from importlib_metadata import version
-import replicate
-from sklearn.preprocessing import scale
 
-path = "C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original"
+# import os
+# from importlib_metadata import version
+# import replicate
+# from sklearn.preprocessing import scale
 
-client = replicate.Client(api_token='4118258dc15c24ee723a9c548737c919042133d2')
+# path = "C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original"
 
-
-# -------------------------------- LOAD MODEL -------------------------------- #
-print("Loading model...")
-model = client.models.get("xinntao/realesrgan")
+# client = replicate.Client(api_token='4118258dc15c24ee723a9c548737c919042133d2')
 
 
-# ---------------------------------- PREDICT --------------------------------- #
-print("Enlarging image...")
-output = model.predict(image='C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original/outputs/raw_images/superman.png',
-version='General - RealESRGANplus', scale=4, face_enchance=True)
+# # -------------------------------- LOAD MODEL -------------------------------- #
+# print("Loading model...")
+# model = client.models.get("xinntao/realesrgan")
+
+
+# # ---------------------------------- PREDICT --------------------------------- #
+# print("Enlarging image...")
+# output = model.predict(image='C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original/outputs/raw_images/superman.png',
+# version='General - RealESRGANplus', scale=4, face_enchance=True)
