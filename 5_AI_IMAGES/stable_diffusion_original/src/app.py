@@ -6,13 +6,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 #number of images to generate
-n = 484
+n = 20
 
 # -------------------------------- APPLICATION ------------------------------- #
 def main():
     #generate main word and prompt
-    word = promp_generator.choose_word()
-    prompt = promp_generator.generate_prompts(word)
+    # word = promp_generator.choose_word()
+    prompt = promp_generator.generate_prompts('scene of')
     print(prompt)
     #generate image
     images_generator.generate_image(prompt)

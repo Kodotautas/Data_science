@@ -12,7 +12,6 @@ from diffusers import StableDiffusionPipeline
 torch.cuda.empty_cache()
 gc.collect()
 
-
 path = "C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original"
 
 
@@ -33,7 +32,7 @@ def generate_image(prompt):
     image.metadata = {'model': 'stable-diffusion-v1-4'}
     image.metadata = {'author': 'Vytautas Lukosiunas'}
     #save image
-    image.save(path + '/outputs/raw_images/' + prompt[0:30] + '.png')
+    image.save(path + '/outputs/raw_images/' + prompt.split()[0] + '.png')
     #add promt and prompt[0:30] to prompts.txt
     with open(path + '/outputs/prompts/prompts.txt', 'a') as f:
         f.write(prompt[0:30] + '.png' + '\n')
