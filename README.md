@@ -7,3 +7,5 @@ Public repository for Data Science projects
 3 - multivariate linear regresion with Pytorch example.
 
 4 - computer vision project to identify car body style with PyTorch.
+
+5 - testing text > image Stable Diffusion model capabilities.
