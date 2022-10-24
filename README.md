@@ -8,4 +8,4 @@ Public repository for Data Science projects
 
 4 - computer vision project to identify car body style with PyTorch.
 
-5 - testing text > image Stable Diffusion capabilities.
+5 - testing text > image Stable Diffusion model capabilities.
