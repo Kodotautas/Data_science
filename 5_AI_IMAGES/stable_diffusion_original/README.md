@@ -1,1 +1,1 @@
-Images generation app with Stable Diffusion model for free time project.
+Images generation app with Stable Diffusion model as free time project.
