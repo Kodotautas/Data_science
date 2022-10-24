@@ -1,3 +1,4 @@
+from zmq import Errno
 import promp_generator
 import images_generator
 # import images_tuner
@@ -6,13 +7,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 #number of images to generate
-n = 200
+n = 150
 
 # -------------------------------- APPLICATION ------------------------------- #
 def main():
     #generate main word and prompt
     # word = promp_generator.choose_word()
-    prompt = promp_generator.generate_prompts('global warming')
+    prompt = promp_generator.generate_prompts('Scene of future human problems')
     print(prompt)
     #generate image
     images_generator.generate_image(prompt)
