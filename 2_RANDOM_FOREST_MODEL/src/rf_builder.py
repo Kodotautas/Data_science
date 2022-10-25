@@ -1,5 +1,5 @@
 # =============================================================================
-# Code forecast FIX and ohers clients (except SPOT clients) consumption and export 
+# Code forecast consumption and export 
 # data as CSV file. 
 # Forecast model based on Random Forest regression from Sckit Learn package.
 # Model forecast every hour separately and then combine to normal time series data.
@@ -33,7 +33,7 @@ from sklearn.feature_selection import VarianceThreshold
 #get current working directory
 cwd = os.getcwd()
 
-df = pd.read_csv(r'//vtic-fds-02.corp.rst.lt/IGN/Organizacija/Didmena/Didmenine_prekyba/KPVD/01 Tiekimo planavimas/Lietuva/_B2B_FORECAST/B2B_AUTO_FORECAST/df_DATA.csv', delimiter=',')
+df = pd.read_csv(r'xxx.csv', delimiter=',')
 df['Date'] = pd.to_datetime(df['Date'])
 df = df.rename(columns={'Consumption_auto': 'b2b'}) #file stores total and b2b consumption
 df = df.set_index(['Date'])

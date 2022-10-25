@@ -1,5 +1,5 @@
 # =============================================================================
-# File connect Excel workbook with GAS data, read data and generate forecast with Random Forest Model. 
+# File connect Excel workbook with data, read data and create pipeline of LSTM. 
 # =============================================================================
 import os
 import pandas as pd
@@ -22,7 +22,7 @@ df = pd.read_excel(f"{cwd}/data/TotalConsumption.xlsx")
 df['datetime'] = pd.to_datetime(df['datetime'], utc=False)
 
 try:
-    os.remove('forecast_B2B_GAS_7.csv') ### Remove previous files
+    os.remove('forecast_xxxxxx.csv') ### Remove previous files
 except:
     pass
 
@@ -246,7 +246,7 @@ warnings.filterwarnings('ignore')
 
 
 # --------------------------------- PARAMETERS -------------------------------- #
-n_epochs = 50000 # number epochs
+n_epochs = 5000 # number epochs
 learning_rate = 0.001 # 0.001 lr
 
 input_size = 15 # number of features (get from data)
