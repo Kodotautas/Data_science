@@ -1,5 +1,5 @@
 # =============================================================================
-# File connect Excel workbook with GAS data, read data and generate forecast with Random Forest Model. 
+# File connect Excel workbook with data, read data and make prediction.
 # =============================================================================
 import os
 from datetime import datetime
@@ -16,10 +16,6 @@ from torch.autograd import Variable
 import warnings
 warnings.filterwarnings('ignore')
 
-#TO DO:
-#send email when model is finished
-#think how to generate 3 days forecast
-
 # =============================================================================
 # 1. DATA PROCESSING AS IN MODEL TRAINING
 # Read excel workbook for data
@@ -30,7 +26,7 @@ df = pd.read_excel(f"{cwd}/data/TotalConsumption.xlsx")
 df['datetime'] = pd.to_datetime(df['datetime'], utc=False)
 
 try:
-    os.remove('forecast_B2B_GAS_7.csv') ### Remove previous files
+    os.remove('forecast_xxxxx.csv') ### Remove previous files
 except:
     pass
 
