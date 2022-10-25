@@ -41,3 +41,5 @@ def generate_prompts(word):
     #decode
     prompt = tokenizer.decode(output[0], skip_special_tokens=True)
     return prompt
+
+generate_prompts('Sun in the forest')

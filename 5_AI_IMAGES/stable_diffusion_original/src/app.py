@@ -7,18 +7,18 @@ import warnings
 warnings.filterwarnings('ignore')
 
 #number of images to generate
-n = 150
+n = 1000
+
 
 # -------------------------------- APPLICATION ------------------------------- #
 def main():
     #generate main word and prompt
     # word = promp_generator.choose_word()
-    prompt = promp_generator.generate_prompts('Scene of future human problems')
-    print(prompt)
+    prompt = promp_generator.generate_prompts('Cute, big smile punk animal, clean background') #CLIP allows max 77 characters
+    # print(prompt)
     #generate image
     images_generator.generate_image(prompt)
     return print("All Done!")
-
 
 if __name__ == "__main__":
     for i in range(n):

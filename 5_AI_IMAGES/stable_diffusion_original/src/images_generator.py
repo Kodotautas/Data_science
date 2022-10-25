@@ -53,3 +53,5 @@ def generate_image(prompt):
         f.write('--------------------------------------------------' + '\n')
         f.close()
     return print("Image & prompt saved!")
+
+generate_image('Sun in the forest')
