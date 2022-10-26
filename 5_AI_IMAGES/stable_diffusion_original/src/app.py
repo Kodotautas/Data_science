@@ -14,7 +14,7 @@ n = 1000
 def main():
     #generate main word and prompt
     # word = promp_generator.choose_word()
-    prompt = promp_generator.generate_prompts('Fruit as a baby with diapers') #CLIP allows max 77 characters
+    prompt = promp_generator.generate_prompts('Scene of') #CLIP allows max 77 characters
     print(prompt)
     #generate image
     images_generator.generate_image(prompt)
