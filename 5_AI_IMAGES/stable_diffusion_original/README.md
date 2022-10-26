@@ -1,1 +1,1 @@
-Images generation app with Stable Diffusion model as free time project.
+Images generation app with Stable Diffusion model as free time project. Its able to generate prompt based on MagicPrompt-Stable-Diffusion model and generate images from it.

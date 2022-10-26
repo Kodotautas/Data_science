@@ -1,5 +1,5 @@
 # =============================================================================
-# File connect Excel workbook with GAS data, read data and generate forecast with Random Forest Model. 
+# File connect Excel workbook with data, read data and generate forecast with Random Forest Model. 
 # =============================================================================
 import os
 from datetime import datetime
