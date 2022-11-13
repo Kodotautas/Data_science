@@ -1,7 +1,11 @@
+import os
 import torch
 from PIL import Image
 import numpy as np
 from RealESRGAN import RealESRGAN
+
+import warnings
+warnings.filterwarnings('ignore')
 
 path = "C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original"
 
@@ -14,16 +18,26 @@ model.load_weights('weights/RealESRGAN_x4.pth', download=True)
 
 
 # -------------------------------- GENERATE IMAGES -------------------------------- #
-def tune_image():
-    path_to_image = "C:/Users/Kodotautas/Desktop/Data_science/5_AI_IMAGES/stable_diffusion_original/outputs/raw_images/whereas.png"
-    image = Image.open(path_to_image).convert('RGB')
-
+def tune_image(image_path):
+    """function enlarges image and saves it to the same folder
+    Args:
+        image_path (_type_): path to the image
+    """    
+    #get image name
+    image_name = os.path.basename(image_path)
+    image = Image.open(image_path).convert('RGB')
     sr_image = model.predict(image)
+    sr_image.save(path + f'/outputs/upscaled_images/{image_name}.png')
+    print(f'{image_name} enlarged and saved to disk.')
 
-    sr_image.save(path + '/outputs/upscaled_images/superman.png')
-    print('Image enlarged and saved to disk.')
+#find all images in the folder
 
-# tune_image()
+
+#tune images from folder
+for image in os.listdir(path + '/outputs/filtered/filter/'):
+    tune_image(path + f'/outputs/filtered/filter/{image}')
+
+print('All Done!')
 
 
 
