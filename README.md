@@ -10,4 +10,4 @@ Public repository for Data Science projects
 
 5 - Testing text >> image Stable Diffusion model capabilities (prompt and image generation, enlarge images).
 
-6 - Chatbot with PyTorch framework and BERT model to answer questions about the cybersecurity industry.
+6 - Chatbot with PyTorch framework to answer questions about the cybersecurity industry.
