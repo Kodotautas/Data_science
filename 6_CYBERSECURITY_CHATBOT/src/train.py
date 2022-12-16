@@ -1,44 +1,66 @@
-from models.model import ChatBot
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import random
 
-def train(model, optimizer, train_data, vocab_size, embedding_dim, hidden_dim, learning_rate, batch_size, num_epochs):
-    # Train the model
-    for epoch in range(num_epochs):
-        # Shuffle the training data
-        random.shuffle(train_data)
-      
-        # Split the training data into batches
-        num_batches = len(train_data) // batch_size
-        for i in range(num_batches):
-            # Get the current batch
-            batch = train_data[i*batch_size : (i+1)*batch_size]
-          
-            # Create the input and target tensors for the current batch
-            # and move them to the GPU (if available)
-            input_tensors = torch.tensor([example[0] for example in batch])
-            target_tensors = torch.tensor([example[1] for example in batch])
-            if torch.cuda.is_available():
-                input_tensors = input_tensors.cuda()
-                target_tensors = target_tensors.cuda()
+# Initialize the DialoGPT tokenizer
+tokenizer = AutoTokenizer.from_pretrained('microsoft/DialoGPT-large')
 
-            # Forward pass
-            output = model(input_tensors)
+# Initialize the DialoGPT model
+model = AutoModelForCausalLM.from_pretrained('microsoft/DialoGPT-large')
 
-            # Compute the loss
-            loss = nn.CrossEntropyLoss()(output, target_tensors)
+# Define the training data
+data = [
+    {"input": "Why do I need to worry about Cyber Security?", "output": "Cyber Security protects unauthorized access and or criminal use of your data."},
+    {"input": "Should I have a different password for every website?", "output": "Yes. If you use the same password on every web- site and someone gets access to it."},
+    {"input": "How can I remember all of my passwords?", "output": "You can use a password manager. There are free options and low cost ones."},
+]
 
-            # Backward pass
-            optimizer.zero_grad()
-            loss.backward()
+# Encode the training data
+encoded_data = []
+for pair in data:
+    input_text = pair['input']
+    output_text = pair['output']
+    input_ids = tokenizer.encode(input_text, return_tensors='pt')
+    output_ids = tokenizer.encode(output_text, return_tensors='pt')
+    encoded_data.append({'input_ids': input_ids, 'output_ids': output_ids})
 
-            # Update the parameters
-            optimizer.step()
 
-        # Print the loss after every epoch
-        print('Epoch: {}/{}, Loss: {:.4f}'.format(epoch+1, num_epochs, loss.item()))
+# Set the number of training epochs
+num_epochs = 10
 
-    # Save the model
-    torch.save(model.state_dict(), 'models/model.pth')
+# Set the learning rate
+lr = 1e-4
+
+# Set the device to use for training
+device = 'cpu'
+
+# Set the model to train mode
+model.train()
+
+# Use Adam optimizer for training
+optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+# Start training loop
+for epoch in range(num_epochs):
+    for data in encoded_data:
+        # Get the input and output tensors
+        input_ids = data['input_ids'].to(device)
+        output_ids = data['output_ids'].to(device)
+        print(input_ids.shape)
+
+        # Reset the gradients
+        optimizer.zero_grad()
+
+        # Forward pass
+        loss = model(input_ids, labels=output_ids)
+
+        # Backward pass and optimization
+        loss.backward()
+
+        # Update the parameters
+        optimizer.step()
+        
+    # Print the loss
+    print(f'Epoch: {epoch+1}, Loss: {loss.item():.4f}')
+
+# Save the model
+model.save_pretrained('models/dialogpt')
