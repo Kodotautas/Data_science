@@ -45,7 +45,9 @@ for epoch in range(num_epochs):
         # Get the input and output tensors
         input_ids = data['input_ids'].to(device)
         output_ids = data['output_ids'].to(device)
-        print(input_ids.shape)
+        
+        # match the output size
+        output_ids = output_ids[:, :-4].contiguous()
 
         # Reset the gradients
         optimizer.zero_grad()
