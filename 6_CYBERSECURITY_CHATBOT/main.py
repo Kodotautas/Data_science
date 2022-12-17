@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from src.data_preprocess import df_to_tuple, convert_to_jsonl
+from src.data_preprocess import df_to_tuple, convert_to_jsonl, accuracy
 from src.generate_response import chatbot_response
 import torch
 import torch.nn as nn
@@ -10,24 +10,24 @@ from transformers import BertTokenizer
 import warnings
 warnings.filterwarnings("ignore")
 
-cwd = os.getcwd()
+path = os.getcwd()
 
 
 # ------------------------------ DATA PREPROCESSING ------------------------------ #
 # read the cybersecurity faq excel file
-df = pd.read_excel(cwd + '/data/security_faq.xlsx')
+df = pd.read_excel(path + '/data/security_faq.xlsx')
 
 # convert the dataframe to a list of tuples
 data = df_to_tuple(df)
-convert_to_jsonl(data)
+convert_to_jsonl(data, path)
 
 # Initialize the tokenizer and the model dialogpt-large
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 
 # -------------------------------- LOAD MODEL -------------------------------- #
-# Load the trained model
-model = BertForMaskedLM.from_pretrained('./models/trained_model')
+# Load the trained model from disk
+model = BertForMaskedLM.from_pretrained(path + '/models/bert_model')
 
 # Check if a GPU is available
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
