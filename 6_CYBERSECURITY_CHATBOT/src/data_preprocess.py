@@ -17,10 +17,15 @@ def df_to_tuple(df):
 
     return tuples
 
-def convert_to_jsonl(data):
+def convert_to_jsonl(data, path):
     # Write the data to a JSONL file
-    with open(os.getcwd() + "/data/security_faq.jsonl", "w") as f:
+    with open(path + "/data/security_faq.jsonl", "w") as f:
         for input_text, output_text in data:
             example = {"input": input_text, "output": output_text}
             f.write(json.dumps(example))
             f.write("\n")
+
+# Define the evaluation metric as the accuracy
+def accuracy(predictions, targets):
+  predictions = predictions.argmax(dim=-1)
+  return (predictions == targets).float().mean()

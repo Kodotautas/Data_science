@@ -1,27 +1,41 @@
+import json
 import os
 from transformers import BertTokenizer
-from data_preprocess import df_to_tuple, convert_to_jsonl
+from transformers import BertForMaskedLM
+from data_preprocess import df_to_tuple, convert_to_jsonl, accuracy
 import pandas as pd
 import torch
+import torch.nn as nn
+
 
 cwd = os.getcwd()
+# one level up
+cwd = os.path.dirname(cwd)
 
+
+# ----------------------------- TRANSFORM DATASET ---------------------------- #
 # Initialize the tokenizer and the model dialogpt-large
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 # read the cybersecurity faq excel file
-# df = pd.read_excel(cwd + '/data/security_faq.xlsx')
+df = pd.read_excel(cwd + '/data/security_faq.xlsx')
 
-# # convert the dataframe to a list of tuples
-# data = df_to_tuple(df)
-# data = convert_to_jsonl(data)
+# convert to json lines
+data = df_to_tuple(df)
+convert_to_jsonl(data, cwd)
 
-data = [
-    {"input": "Why do I need to worry about Cyber Security?", "output": "Cyber Security protects unauthorized access and or criminal use of your data."},
-    {"input": "Should I have a different password for every website?", "output": "Yes. If you use the same password on every web- site and someone gets access to it."},
-    {"input": "How can I remember all of my passwords?", "output": "You can use a password manager. There are free options and low cost ones."},
-]
+# Load the data from the JSONL file
+with open(cwd + '/data/security_faq.jsonl', 'r') as f:
+    data = [json.loads(line) for line in f]
 
+# data = [
+#     {"input": "Why do I need to worry about Cyber Security?", "output": "Cyber Security protects unauthorized access and or criminal use of your data."},
+#     {"input": "Should I have a different password for every website?", "output": "Yes. If you use the same password on every web- site and someone gets access to it."},
+#     {"input": "How can I remember all of my passwords?", "output": "You can use a password manager. There are free options and low cost ones."},
+# ]
+
+
+# ---------------------- TOKENIZE AND CONVERT TO TENSORS --------------------- #
 # Tokenize the input and output
 input_sequences = [tokenizer.encode(datum['input'], add_special_tokens=True) for datum in data]
 output_sequences = [tokenizer.encode(datum['output'], add_special_tokens=True) for datum in data]
@@ -35,26 +49,33 @@ output_sequences = [sequence + [0] * (max_length - len(sequence)) for sequence i
 input_tensors = torch.tensor(input_sequences)
 output_tensors = torch.tensor(output_sequences)
 
-from transformers import BertForMaskedLM
 
+# ----------------------------------- MODEL ---------------------------------- #
 # Initialize the model and optimizer
 model = BertForMaskedLM.from_pretrained('bert-base-uncased')
 optimizer = torch.optim.Adam(model.parameters())
 
-import torch.nn as nn
-
 # Define the loss function as the cross-entropy loss
 loss_fn = nn.CrossEntropyLoss()
 
-# Define the evaluation metric as the accuracy
-def accuracy(predictions, targets):
-  predictions = predictions.argmax(dim=-1)
-  return (predictions == targets).float().mean()
+# Check if a GPU is available
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
+
+# Move the input and output tensors and the model to the device
+input_tensors = input_tensors.to(device)
+output_tensors = output_tensors.to(device)
+model = model.to(device)
+
+# Modify the loss function to be computed on the device
+loss_fn = loss_fn.to(device)
 
 # Set the number of epochs and the batch size
-num_epochs = 10
+num_epochs = 1
 batch_size = 32
 
+
+# ------------------------------- TRAINING LOOP ------------------------------ #
 # Iterate over the epochs
 for epoch in range(num_epochs):
   # Initialize the running loss and accuracy
@@ -71,9 +92,9 @@ for epoch in range(num_epochs):
     optimizer.zero_grad()
 
     # Forward pass
-    predictions = model(input_sequences, labels=output_sequences)[1]
-    loss = loss_fn(predictions.view(-1, predictions.size(-1)), output_sequences.view(-1))
-    acc = accuracy(predictions, output_sequences)
+    predictions = model(input_sequences.to(device), labels=output_sequences.to(device))[1]
+    loss = loss_fn(predictions.view(-1, predictions.size(-1)).to(device), output_sequences.view(-1).to(device))
+    acc = accuracy(predictions.to(device), output_sequences.to(device))
 
     # Backward pass
     loss.backward()
@@ -82,9 +103,11 @@ for epoch in range(num_epochs):
     # Update the running loss and accuracy
     running_loss += loss.item()
     running_acc += acc.item()
+    
+  # Print the loss and accuracy for the epoch
+  print(f"Epoch {epoch+1} - Loss: {running_loss/len(input_tensors):.4f} - Accuracy: {running_acc/len(input_tensors):.4f}")
 
-    # Print the loss and accuracy for the epoch
-    print(f'Epoch: {epoch+1}, Loss: {running_loss/len(input_sequences):.4f}, Accuracy: {running_acc/len(input_sequences):.4f}')
 
+# ------------------------------- SAVE THE MODEL ----------------------------- #
 # Save the model
-model.save_pretrained('model')
+model.save_pretrained(cwd + '/models/trained_model')
