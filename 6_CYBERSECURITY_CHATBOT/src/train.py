@@ -29,10 +29,10 @@ for conversation in conversations:
 # Define the training loop
 optimizer = torch.optim.Adam(model.parameters())
 
-num_epochs = 1
+num_epochs = 3
 
+print('Training data...')
 for epoch in range(num_epochs):
-    print('Training data...')
     # Loop over the training data
     for conversation, input_id, attention_mask in zip(conversations, input_ids, attention_masks):
         # Tokenize the second sentence in the conversation
@@ -63,5 +63,6 @@ print('Testing the chatbot...')
 input_text = 'Hello, how are you doing today?'
 input_id = tokenizer.encode(input_text, return_tensors='pt').to(device)
 attention_mask = torch.ones(input_id.shape[1], dtype=torch.long, device=device)
-response = model.generate(input_ids=input_id, attention_mask=attention_mask, max_length=1024)  # modified here to use input_ids instead of input_id
+response = model.generate(input_ids=input_id, attention_mask=attention_mask, max_length=100, do_sample=True, top_k=50, top_p=0.95, temperature=0.7, num_return_sequences=1)
 response_text = tokenizer.decode
+print(response_text)
