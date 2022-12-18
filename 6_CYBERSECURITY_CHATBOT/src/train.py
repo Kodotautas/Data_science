@@ -1,8 +1,14 @@
-# Description: Train the chatbot model with the training data and save the model.
+import os
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from data_preprocess import loss_function
 
+path = os.getcwd()
+# one level up
+path = os.path.dirname(path)
+
+
+# ------------------------------ PREPROCESS DATA ----------------------------- #
 # Load the tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained('microsoft/DialoGPT-large')
 model = AutoModelForCausalLM.from_pretrained('microsoft/DialoGPT-large')
@@ -12,57 +18,68 @@ model = AutoModelForCausalLM.from_pretrained('microsoft/DialoGPT-large')
 device = torch.device("cpu")
 model.to(device)
 
-# Load the training data
+# sample training data
 conversations = [['Hello, how are you doing today?', 'I am doing well, thank you. How about you?'],
     ['I am doing well too. Do you have any plans for the weekend?', 'Not really, I was thinking of just relaxing at home.'],
     ['That sounds like a good plan. I might join you.', 'That would be great! We can watch movies and cook together.']
     ]
 
 # Preprocess the training data
-input_ids = []
-attention_masks = []
+input_tensors = []
+target_tensors = []
 for conversation in conversations:
-    # Tokenize the conversation
-    input_ids.append(tokenizer.encode(conversation[0], return_tensors='pt').to(device))
-    attention_masks.append(torch.ones(input_ids[-1].shape[1], dtype=torch.long, device=device))
+  input_tensor = tokenizer.encode(conversation[0], return_tensors='pt')
+  target_tensor = tokenizer.encode(conversation[1], return_tensors='pt')
+  input_tensors.append(input_tensor)
+  target_tensors.append(target_tensor)
 
-# Define the training loop
+# Align the tensors
+max_len = max(len(input_tensor[0]), len(target_tensor[0]))
+for i in range(len(input_tensors)):
+  input_tensors[i] = torch.nn.functional.pad(input_tensors[i], (0,max_len-len(input_tensors[i][0])))
+  target_tensors[i] = torch.nn.functional.pad(target_tensors[i], (0,max_len-len(target_tensors[i][0])))
+
+# Move the tensors to the device
+input_tensors = [tensor.to(device) for tensor in input_tensors]
+target_tensors = [tensor.to(device) for tensor in target_tensors]
+
+# Define the optimizer and criterion
 optimizer = torch.optim.Adam(model.parameters())
+criterion = loss_function
 
-num_epochs = 3
 
-print('Training data...')
-for epoch in range(num_epochs):
-    # Loop over the training data
-    for conversation, input_id, attention_mask in zip(conversations, input_ids, attention_masks):
-        # Tokenize the second sentence in the conversation
-        target_id = tokenizer.encode(conversation[1], return_tensors='pt').to(device)
+# ------------------------------ TRAIN MODEL ------------------------------ #
+# Train the model
+epochs = 100
+for epoch in range(epochs):
+  for i in range(len(input_tensors)):
+    input_tensor = input_tensors[i]
+    target_tensor = target_tensors[i]
 
-        # Allign tensors
-        input_id = input_id[:, :target_id.shape[1]]
-        target_id = target_id[:, :input_id.shape[1]]
-        attention_mask = attention_mask[:input_id.shape[1]]
+    # Forward pass
+    outputs = model(input_tensor, labels=target_tensor)
+    loss = outputs.loss
+    logits = outputs.logits
 
-        # Forward pass
-        output = model(input_ids=input_id, attention_mask=attention_mask, labels=target_id)
-        loss = output.loss
+    # Backward pass
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
-        # Backward pass
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-
-    # Print the loss
-    print(f'Epoch: {epoch+1}, Loss: {loss.item()}')
+  # Print the loss
+  print(f'Epoch: {epoch+1}/{epochs}, Step: {i+1}/{len(input_tensors)}, Loss: {loss.item():.4f}')
 
 # Save the model
-model.save_pretrained('models/dialogpt_large')
+model.save_pretrained(path + '/models/dialogpt')
 
-# Test the chatbot
-print('Testing the chatbot...')
-input_text = 'Hello, how are you doing today?'
-input_id = tokenizer.encode(input_text, return_tensors='pt').to(device)
-attention_mask = torch.ones(input_id.shape[1], dtype=torch.long, device=device)
-response = model.generate(input_ids=input_id, attention_mask=attention_mask, max_length=100, do_sample=True, top_k=50, top_p=0.95, temperature=0.7, num_return_sequences=1)
-response_text = tokenizer.decode
-print(response_text)
+# Save the tokenizer
+tokenizer.save_pretrained(path + '/models/dialogpt')
+
+
+# ------------------------------ TEST MODEL ------------------------------ #
+# Test the model
+input_tensor = tokenizer.encode('Hello, how are you doing today?', return_tensors='pt')
+input_tensor = torch.nn.functional.pad(input_tensor, (0,max_len-len(input_tensor[0])))
+input_tensor = input_tensor.to(device)
+output = model.generate(input_tensor, max_length=100, num_beams=5, no_repeat_ngram_size=2, early_stopping=True)
+print(tokenizer.decode(output[0], skip_special_tokens=True))

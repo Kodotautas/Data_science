@@ -1,11 +1,10 @@
 import os
 import pandas as pd
-from src.data_preprocess import df_to_tuple, convert_to_jsonl, accuracy
 from src.generate_response import chatbot_response
+from src.data_preprocessing import df_to_tuple, convert_to_jsonl
 import torch
 import torch.nn as nn
-from transformers import BertForMaskedLM
-from transformers import BertTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -22,12 +21,12 @@ data = df_to_tuple(df)
 convert_to_jsonl(data, path)
 
 # Initialize the tokenizer and the model dialogpt-large
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+tokenizer = AutoTokenizer.from_pretrained(path + '/models/chatbot_tokenizer')
 
 
 # -------------------------------- LOAD MODEL -------------------------------- #
 # Load the trained model from disk
-model = BertForMaskedLM.from_pretrained(path + '/models/bert_model')
+model = AutoModelForCausalLM.from_pretrained(path + '/models/chatbot_model')
 
 # Check if a GPU is available
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -40,8 +39,21 @@ model = model.to(device)
 # ------------------------------- TEST CHATBOT ------------------------------- #
 # create a loop to test the chatbot until the user types "bye"
 while True:
-    prompt = input("Enter your message: ")
-    if prompt == "bye" or prompt == "Bye":
+    # Get the user input
+    user_input = input('You: ')
+
+    # Check if the user input is a question
+    if user_input[-1] != '?':
+        print('Chatbot: Please ask a question.')
+        continue
+
+    # Check if the user input is "bye"
+    if user_input.lower() == 'bye':
+        print('Chatbot: Bye')
         break
-    response = chatbot_response(prompt, tokenizer, model, device)
-    print(f"Chatbot: {response}")
+
+    # Generate a response
+    response = chatbot_response(user_input, model, tokenizer, device)
+
+    # Print the response
+    print('Chatbot: ' + response)
