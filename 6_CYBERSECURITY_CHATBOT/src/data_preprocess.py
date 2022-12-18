@@ -1,6 +1,7 @@
 import json
 import os
 import pandas as pd
+import torch
 
 def df_to_tuple(df):
     """Convert a dataframe to a list of tuples.
@@ -29,3 +30,9 @@ def convert_to_jsonl(data, path):
 def accuracy(predictions, targets):
   predictions = predictions.argmax(dim=-1)
   return (predictions == targets).float().mean()
+
+# Define the loss function
+def loss_function(predictions, labels):
+    # Calculate the cross entropy loss between the predictions and the labels
+    loss = torch.nn.CrossEntropyLoss()(predictions, labels)
+    return loss
