@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 from src.generate_response import chatbot_response
-from src.data_preprocessing import df_to_tuple, convert_to_jsonl
 import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -12,21 +11,12 @@ warnings.filterwarnings("ignore")
 path = os.getcwd()
 
 
-# ------------------------------ DATA PREPROCESSING ------------------------------ #
-# read the cybersecurity faq excel file
-df = pd.read_excel(path + '/data/security_faq.xlsx')
-
-# convert the dataframe to a list of tuples
-data = df_to_tuple(df)
-convert_to_jsonl(data, path)
-
-# Initialize the tokenizer and the model dialogpt-large
-tokenizer = AutoTokenizer.from_pretrained(path + '/models/chatbot_tokenizer')
-
-
 # -------------------------------- LOAD MODEL -------------------------------- #
 # Load the trained model from disk
-model = AutoModelForCausalLM.from_pretrained(path + '/models/chatbot_model')
+model = AutoModelForCausalLM.from_pretrained(path + '/models/dialogpt')
+# Initialize the tokenizer and the model dialogpt-large
+tokenizer = AutoTokenizer.from_pretrained(path + '/models/dialogpt')
+
 
 # Check if a GPU is available
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,7 +26,7 @@ device = torch.device("cpu")
 model = model.to(device)
 
 
-# ------------------------------- TEST CHATBOT ------------------------------- #
+# ---------------------------------- CHATBOT --------------------------------- #
 # create a loop to test the chatbot until the user types "bye"
 while True:
     # Get the user input

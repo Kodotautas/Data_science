@@ -1,7 +1,8 @@
 import os
+import pandas as pd
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from data_preprocess import loss_function
+from data_preprocess import df_to_list, calculate_accuracy
 
 path = os.getcwd()
 # one level up
@@ -18,11 +19,15 @@ model = AutoModelForCausalLM.from_pretrained('microsoft/DialoGPT-large')
 device = torch.device("cpu")
 model.to(device)
 
+df = pd.read_excel(path + '/data/security_faq.xlsx')
+conversations = df_to_list(df)
+# print(conversations)
+
 # sample training data
-conversations = [['Hello, how are you doing today?', 'I am doing well, thank you. How about you?'],
-    ['I am doing well too. Do you have any plans for the weekend?', 'Not really, I was thinking of just relaxing at home.'],
-    ['That sounds like a good plan. I might join you.', 'That would be great! We can watch movies and cook together.']
-    ]
+# conversations = [['Hello, how are you doing today?', 'I am doing well, thank you. How about you?'],
+#     ['I am doing well too. Do you have any plans for the weekend?', 'Not really, I was thinking of just relaxing at home.'],
+#     ['That sounds like a good plan. I might join you.', 'That would be great! We can watch movies and cook together.']
+#     ]
 
 # Preprocess the training data
 input_tensors = []
@@ -45,30 +50,49 @@ target_tensors = [tensor.to(device) for tensor in target_tensors]
 
 # Define the optimizer and criterion
 optimizer = torch.optim.Adam(model.parameters())
-criterion = loss_function
+criterion = torch.nn.CrossEntropyLoss()
+
+# test tensors
+print(input_tensors[0])
+print(target_tensors[0])
+
+# visualize tensors with matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+plt.imshow(input_tensors[0].detach().numpy())
+plt.show()
 
 
 # ------------------------------ TRAIN MODEL ------------------------------ #
 # Train the model
-epochs = 100
+print('Training the model...')
+epochs = 10
 for epoch in range(epochs):
   for i in range(len(input_tensors)):
+    # Get the input and target tensors
     input_tensor = input_tensors[i]
     target_tensor = target_tensors[i]
 
     # Forward pass
-    outputs = model(input_tensor, labels=target_tensor)
-    loss = outputs.loss
-    logits = outputs.logits
+    logits = model(input_tensor, labels=target_tensor)[1]
+
+    # Calculate the loss
+    loss = criterion(logits.view(-1, logits.shape[-1]), target_tensor.view(-1))
 
     # Backward pass
-    optimizer.zero_grad()
     loss.backward()
+
+    # Update the parameters
     optimizer.step()
 
-  # Print the loss
-  print(f'Epoch: {epoch+1}/{epochs}, Step: {i+1}/{len(input_tensors)}, Loss: {loss.item():.4f}')
+    # Zero the gradients
+    optimizer.zero_grad()
 
+  # Print the loss and accuracy
+  print('Epoch: {}/{}'.format(epoch+1, epochs))
+  print('Loss: {}'.format(loss.item()))
+  print('Accuracy: {}'.format(calculate_accuracy(logits, target_tensor)))
+  
 # Save the model
 model.save_pretrained(path + '/models/dialogpt')
 
@@ -78,7 +102,7 @@ tokenizer.save_pretrained(path + '/models/dialogpt')
 
 # ------------------------------ TEST MODEL ------------------------------ #
 # Test the model
-input_tensor = tokenizer.encode('Hello, how are you doing today?', return_tensors='pt')
+input_tensor = tokenizer.encode('Hello', return_tensors='pt')
 input_tensor = torch.nn.functional.pad(input_tensor, (0,max_len-len(input_tensor[0])))
 input_tensor = input_tensor.to(device)
 output = model.generate(input_tensor, max_length=100, num_beams=5, no_repeat_ngram_size=2, early_stopping=True)
