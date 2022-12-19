@@ -1,6 +1,7 @@
 import os
-import pandas as pd
 from src.generate_response import chatbot_response
+import pandas as pd
+
 import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -27,23 +28,15 @@ model = model.to(device)
 
 
 # ---------------------------------- CHATBOT --------------------------------- #
-# create a loop to test the chatbot until the user types "bye"
-while True:
-    # Get the user input
-    user_input = input('You: ')
-
-    # Check if the user input is a question
-    if user_input[-1] != '?':
-        print('Chatbot: Please ask a question.')
-        continue
-
-    # Check if the user input is "bye"
-    if user_input.lower() == 'bye':
-        print('Chatbot: Bye')
-        break
-
-    # Generate a response
-    response = chatbot_response(user_input, model, tokenizer, device)
-
-    # Print the response
-    print('Chatbot: ' + response)
+# Start the chatbot
+model.eval()
+print('Predicting...')
+with torch.no_grad():
+    while True:
+        question = input('Enter your question: ')
+        if question == 'quit':
+            break
+        question = tokenizer.encode(question, return_tensors='pt').to(device)
+        answer = model.generate(question, max_length=100, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
+        print('Answer: {}'.format(tokenizer.decode(answer[0], skip_special_tokens=True)))
+        print('')

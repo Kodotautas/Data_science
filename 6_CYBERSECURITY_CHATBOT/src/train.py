@@ -2,9 +2,12 @@ import os
 import pandas as pd
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from data_preprocess import df_to_list, calculate_accuracy, max_words
+from data_preprocess import df_to_list, max_words
 # add padding to tensors
 from torch.nn import functional as F
+
+import warnings
+warnings.filterwarnings("ignore")
 
 path = os.getcwd()
 # one level up
@@ -24,129 +27,81 @@ model.to(device)
 df = pd.read_excel(path + '/data/security_faq.xlsx')
 max_lenght = max_words(df)
 conversations = df_to_list(df)
-# print(conversations)
 
-# sample training data
-# conversations = [['Hello, how are you doing today?', 'I am doing well, thank you. How about you?'],
-#     ['I am doing well too. Do you have any plans for the weekend?', 'Not really, I was thinking of just relaxing at home.'],
-#     ['That sounds like a good plan. I might join you.', 'That would be great! We can watch movies and cook together.']
-#     ]
+#short conversations for testing
+conversations = conversations[:5]
 
-# Preprocess the training data
-input_tensors = []
-target_tensors = []
+# ------------------------- PREPARE DATA FOR TRAINING ------------------------ #
+# Tokenize the conversations
+input_ids = []
+attention_mask = []
 for conversation in conversations:
-  input_tensor = tokenizer.encode(conversation[0], return_tensors='pt')
-  target_tensor = tokenizer.encode(conversation[1], return_tensors='pt')
-  input_tensors.append(input_tensor)
-  target_tensors.append(target_tensor)
+    input_id = tokenizer.encode(conversation, add_special_tokens=True, max_length=max_lenght, pad_to_max_length=True)
+    attention_m = [1] * len(input_id)
+    input_ids.append(torch.tensor(input_id))
+    attention_mask.append(torch.tensor(attention_m))
 
-# Align the tensors
-max_len = max_lenght
-for i in range(len(input_tensors)):
-  input_tensors[i] = torch.nn.functional.pad(input_tensors[i], (0,max_len-len(input_tensors[i][0])))
-  target_tensors[i] = torch.nn.functional.pad(target_tensors[i], (0,max_len-len(target_tensors[i][0])))
-
-# stacked_input_tensor, stacked_target_tensor = align_tensors(input_tensors, target_tensors)
+# Convert the lists to tensors
+input_ids = torch.stack(input_ids)
+attention_mask = torch.stack(attention_mask)
 
 # Move the tensors to the device
-input_tensors = [tensor.to(device) for tensor in input_tensors]
-target_tensors = [tensor.to(device) for tensor in target_tensors]
+input_ids = input_ids.to(device)
+attention_mask = attention_mask.to(device)
 
-# move to device
-# stacked_input_tensor = stacked_input_tensor.to(device)
-# stacked_target_tensor = stacked_target_tensor.to(device)
-
-# Define the optimizer and criterion
-optimizer = torch.optim.Adam(model.parameters())
-criterion = torch.nn.CrossEntropyLoss()
-
-# test tensors are correct
-def print_tensor(tensor):
-  print(tokenizer.decode(tensor[0], skip_special_tokens=True))
-print_tensor(input_tensors[0])
-print_tensor(target_tensors[0])
-
-def test_tensors():
-  for i in range(0):
-    print(input_tensors[i].shape)
-    print(target_tensors[i].shape)
-
-test_tensors()
+# check decoded input and attention mask
+print(tokenizer.decode(input_ids[0], skip_special_tokens=True))
+print(attention_mask[0])
 
 
-# ------------------------------ TRAIN MODEL ------------------------------ #
+# ------------------------------- TRAIN THE MODEL ---------------------------- #
 # Train the model
-print('Training the model...')
-epochs = 10
-for epoch in range(epochs):
-  for i in range(len(input_tensors)):
-    # Get the input and target tensors
-    input_tensor = input_tensors[i]
-    target_tensor = target_tensors[i]
-    # Forward pass
-    logits = model(input_tensor, labels=target_tensor)[1]
-    # Calculate the loss
-    loss = criterion(logits.view(-1, logits.shape[-1]), target_tensor.view(-1))
-    # Backward pass
-    loss.backward()
-    # Update the parameters
-    optimizer.step()
-    # Zero the gradients
-    optimizer.zero_grad()
+model.train()
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+losses = []
+print('Training...')
+for epoch in range(1):
+    total_loss = 0
+    for i in range(len(input_ids)):
+        optimizer.zero_grad()
+        outputs = model(input_ids[i].unsqueeze(0), attention_mask=attention_mask[i].unsqueeze(0), labels=input_ids[i].unsqueeze(0))
+        loss, logits = outputs[:2]
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+    losses.append(total_loss / len(input_ids))
+    print('Epoch: {}, Loss: {}'.format(epoch, total_loss / len(input_ids)))
 
-  # Print the loss and accuracy
-  print('Epoch: {}/{}'.format(epoch+1, epochs))
-  print('Loss: {}'.format(loss.item()))
-  print('Accuracy: {}'.format(calculate_accuracy(logits, target_tensor)))
 
+# ------------------------------- SAVE THE MODEL ----------------------------- #
 # Save the model
 model.save_pretrained(path + '/models/dialogpt')
 
 # Save the tokenizer
 tokenizer.save_pretrained(path + '/models/dialogpt')
+print('Model and tokenizer saved')
 
 
-
-# ------------------------------ TRAIN MODEL ------------------------------ #
-# # Train the model
-# print('Training the model...')
-# epochs = 10
-# for epoch in range(epochs):
-#   for i in range(len(input_tensors)):
-#     # Get the input and target tensors
-#     input_tensor = input_tensors[i]
-#     target_tensor = target_tensors[i]
-
-#     # Forward pass
-#     logits = model(input_tensor, labels=target_tensor)[1]
-
-#     # Calculate the loss
-#     loss = criterion(logits.view(-1, logits.shape[-1]), target_tensor.view(-1))
-
-#     # Backward pass
-#     loss.backward()
-
-#     # Update the parameters
-#     optimizer.step()
-
-#     # Zero the gradients
-#     optimizer.zero_grad()
-
-#   # Print the loss and accuracy
-#   print('Epoch: {}/{}'.format(epoch+1, epochs))
-#   print('Loss: {}'.format(loss.item()))
-#   print('Accuracy: {}'.format(calculate_accuracy(logits, target_tensor)))
-  
-# # Save the model
-# model.save_pretrained(path + '/models/dialogpt')
-
-# # Save the tokenizer
-# tokenizer.save_pretrained(path + '/models/dialogpt')
-
-
-# ------------------------------ TEST MODEL ------------------------------ #
+# ------------------------------- TEST AND EVALUATE -------------------------- #
 # Test the model
-input_tensor = tokenizer.encode('Hello', return_tensors='pt').to(device)
-output_tensor = model.generate(input_tensor, max_length=100, num_beams=5, no_repeat_ngram_size=2, early_stopping=True)
-print(tokenizer.decode(output_tensor[0], skip_special_tokens=True))
+model.eval()
+print('Testing...')
+with torch.no_grad():
+    for i in range(len(input_ids)):
+        question = tokenizer.decode(input_ids[i], skip_special_tokens=True)
+        answer = model.generate(input_ids[i].unsqueeze(0), max_length=100, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
+        print('Question: {}'.format(question))
+        print('Answer: {}'.format(tokenizer.decode(answer[0], skip_special_tokens=True)))
+        print('')
+
+
+# Calculate the accuracy
+def accuracy():
+    correct = 0
+    for i in range(len(input_ids)):
+        answer = model.generate(input_ids[i].unsqueeze(0), max_length=max_lenght, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
+        if tokenizer.decode(answer[0], skip_special_tokens=True) == tokenizer.decode(input_ids[i], skip_special_tokens=True):
+            correct += 1
+    return correct / len(input_ids)
+
+print('Accuracy: {}'.format(accuracy()))

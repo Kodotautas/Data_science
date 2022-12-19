@@ -18,20 +18,6 @@ def df_to_list(df):
 
     return tuples
 
-# Define the evaluation metric as the accuracy
-def calculate_accuracy(logits, targets):
-  """function to calculate accuracy of model
-  Args:
-      logits (predictions): model predictions 
-      targets (labels): correct labels
-
-  Returns:
-      float: accuracy of model
-  """    
-  predictions = torch.argmax(logits, dim=2)
-  correct = torch.eq(predictions, targets).float()
-  return correct.sum() / correct.numel()
-
 def align_tensors(input_tensors, target_tensors):
   # Find the maximum length of the input and target tensors
   max_input_len = max([input_tensor.size(1) for input_tensor in input_tensors])
