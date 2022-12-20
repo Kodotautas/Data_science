@@ -3,16 +3,15 @@ import torch
 # Define a function to generate a response
 def chatbot_response(user_input, model, tokenizer, device):
     """function generates response from user input
-
     Args:
         user_input (string): user input
         model (): model to generate response
         tokenizer (): tokenizer to tokenize user input
         device (): device to run model on (cpu or gpu)
-
     Returns:
         _type_: _description_
-    """    # Tokenize the user input
+    """    
+    # Tokenize the user input
     input_ids = tokenizer.encode(user_input, return_tensors='pt').to(device)
 
     # Forward pass
