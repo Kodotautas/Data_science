@@ -27,7 +27,8 @@ max_lenght = max_words(df)
 conversations = df_to_list(df)
 
 #short conversations for testing (list of lists)
-conversations = conversations[2:7]
+conversations = conversations[2:4]
+print(conversations)
 
 
 # ------------------------- PREPARE DATA FOR TRAINING ------------------------ #
@@ -62,7 +63,7 @@ print('A:', tokenizer.decode(input_ids[1][1], skip_special_tokens=True))
 
 # ------------------------------- TRAIN THE MODEL ---------------------------- #
 # Train the model
-epochs = 1
+epochs = 5
 batch_size = 1
 learning_rate = 1e-5
 
@@ -102,11 +103,11 @@ for epoch in range(epochs):
 
 # ------------------------------- SAVE THE MODEL ----------------------------- #
 # Save the model
-torch.save(model.state_dict(), path + '/models/dialogpt/model.pt')
+model.save_pretrained(path + '/models/dialogpt')
 
 # Save the tokenizer
-torch.save(tokenizer, path + '/models/dialogpt/tokenizer.pt')
-print('Model and tokenizer saved')
+tokenizer.save_pretrained(path + '/models/dialogpt')
+print('Model and tokenizer saved to disk.')
 
 
 # ------------------------------- TEST MODEL OUTPUT -------------------------- #
