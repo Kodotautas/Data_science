@@ -3,8 +3,6 @@ import pandas as pd
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from data_preprocess import df_to_list, max_words
-# add padding to tensors
-from torch.nn import functional as F
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -28,80 +26,120 @@ df = pd.read_excel(path + '/data/security_faq.xlsx')
 max_lenght = max_words(df)
 conversations = df_to_list(df)
 
-#short conversations for testing
-conversations = conversations[:5]
+#short conversations for testing (list of lists)
+conversations = conversations[2:7]
+
 
 # ------------------------- PREPARE DATA FOR TRAINING ------------------------ #
+tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+model.resize_token_embeddings(len(tokenizer))
+
 # Tokenize the conversations
 input_ids = []
 attention_mask = []
 for conversation in conversations:
-    input_id = tokenizer.encode(conversation, add_special_tokens=True, max_length=max_lenght, pad_to_max_length=True)
-    attention_m = [1] * len(input_id)
-    input_ids.append(torch.tensor(input_id))
-    attention_mask.append(torch.tensor(attention_m))
+    input_id = []
+    attention_mask_ = []
+    for sentence in conversation:
+        encoded = tokenizer.encode(sentence, add_special_tokens=True, pad_to_max_length=True, truncation=True, max_length=max_lenght)
+        input_id.append(encoded)
+        attention_mask_.append([1] * len(encoded))
+    input_ids.append(input_id)
+    attention_mask.append(attention_mask_)
 
 # Convert the lists to tensors
-input_ids = torch.stack(input_ids)
-attention_mask = torch.stack(attention_mask)
+input_ids = torch.tensor(input_ids)
+attention_mask = torch.tensor(attention_mask)
 
-# Move the tensors to the device
-input_ids = input_ids.to(device)
-attention_mask = attention_mask.to(device)
+#check input_ids and attention_mask
+print(input_ids.shape)
+print(attention_mask.shape)
 
-# check decoded input and attention mask
-print(tokenizer.decode(input_ids[0], skip_special_tokens=True))
-print(attention_mask[0])
+# decode the input_ids to check if the encoding is correct
+print('Q:', tokenizer.decode(input_ids[1][0], skip_special_tokens=True))
+print('A:', tokenizer.decode(input_ids[1][1], skip_special_tokens=True))
 
 
 # ------------------------------- TRAIN THE MODEL ---------------------------- #
 # Train the model
-model.train()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
-losses = []
-print('Training...')
-for epoch in range(1):
-    total_loss = 0
-    for i in range(len(input_ids)):
-        optimizer.zero_grad()
-        outputs = model(input_ids[i].unsqueeze(0), attention_mask=attention_mask[i].unsqueeze(0), labels=input_ids[i].unsqueeze(0))
-        loss, logits = outputs[:2]
+epochs = 1
+batch_size = 1
+learning_rate = 1e-5
+
+# Create the optimizer
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+# Create the loss function
+loss_fn = torch.nn.CrossEntropyLoss()
+
+# Train the model
+for epoch in range(epochs):
+    print('Epoch: {}'.format(epoch))
+    for i in range(0, len(input_ids), batch_size):
+        # Get the inputs and labels
+        input_ids_ = input_ids[i:i+batch_size]
+        attention_mask_ = attention_mask[i:i+batch_size]
+        labels = input_ids_.clone()
+        labels[:, :-1] = input_ids_[:, 1:]
+
+        # Move the tensors to the device
+        input_ids_ = input_ids_.to(device)
+        attention_mask_ = attention_mask_.to(device)
+        labels = labels.to(device)
+
+        # Forward pass
+        outputs = model(input_ids_, attention_mask=attention_mask_, labels=labels)
+        loss = outputs[0]
+
+        # Backward pass
         loss.backward()
         optimizer.step()
-        total_loss += loss.item()
-    losses.append(total_loss / len(input_ids))
-    print('Epoch: {}, Loss: {}'.format(epoch, total_loss / len(input_ids)))
+        optimizer.zero_grad()
+
+        # Print the loss
+        print('Loss: {}'.format(loss.item()))
 
 
 # ------------------------------- SAVE THE MODEL ----------------------------- #
 # Save the model
-model.save_pretrained(path + '/models/dialogpt')
+torch.save(model.state_dict(), path + '/models/dialogpt/model.pt')
 
 # Save the tokenizer
-tokenizer.save_pretrained(path + '/models/dialogpt')
+torch.save(tokenizer, path + '/models/dialogpt/tokenizer.pt')
 print('Model and tokenizer saved')
 
 
-# ------------------------------- TEST AND EVALUATE -------------------------- #
-# Test the model
+# ------------------------------- TEST MODEL OUTPUT -------------------------- #
+# Test the model and calculte accuracy for each conversation
 model.eval()
-print('Testing...')
 with torch.no_grad():
-    for i in range(len(input_ids)):
-        question = tokenizer.decode(input_ids[i], skip_special_tokens=True)
-        answer = model.generate(input_ids[i].unsqueeze(0), max_length=100, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
-        print('Question: {}'.format(question))
-        print('Answer: {}'.format(tokenizer.decode(answer[0], skip_special_tokens=True)))
-        print('')
+    for i, conversation in enumerate(conversations):
+        print('Conversation: {}'.format(i+1))
+        for j, sentence in enumerate(conversation):
+            if j == 0:
+                input_ids = tokenizer.encode(sentence, return_tensors='pt')
+                attention_mask = torch.ones_like(input_ids)  # create attention mask
+                input_ids = input_ids.to(device)
+                generated = model.generate(input_ids, attention_mask=attention_mask, pad_token_id=tokenizer.pad_token_id, max_length=100, num_beams=5, no_repeat_ngram_size=2, early_stopping=True)
+                generated = generated[0].tolist()
+                generated = tokenizer.decode(generated, skip_special_tokens=True)
+                print('User: {}'.format(sentence))
+                print('Bot: {}'.format(generated))
+                # print('Actual: {}'.format(conversation[j+1]))
 
 
-# Calculate the accuracy
-def accuracy():
-    correct = 0
-    for i in range(len(input_ids)):
-        answer = model.generate(input_ids[i].unsqueeze(0), max_length=max_lenght, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
-        if tokenizer.decode(answer[0], skip_special_tokens=True) == tokenizer.decode(input_ids[i], skip_special_tokens=True):
-            correct += 1
-    return correct / len(input_ids)
-
-print('Accuracy: {}'.format(accuracy()))
+# calculate accuracy
+def calculate_accuracy(model, tokenizer, conversations):
+    model.eval()
+    with torch.no_grad():
+        for i, conversation in enumerate(conversations):
+            print('Conversation: {}'.format(i))
+            for j, sentence in enumerate(conversation):
+                if j == 0:
+                    input_ids = tokenizer.encode(sentence, return_tensors='pt')
+                    input_ids = input_ids.to(device)
+                    generated = model.generate(input_ids, max_length=max_lenght, num_beams=5, no_repeat_ngram_size=2, early_stopping=True)
+                    generated = generated[0].tolist()
+                    generated = tokenizer.decode(generated, skip_special_tokens=True)
+        
+print('Accuracy: {}'.format(calculate_accuracy(model, tokenizer, conversations)))

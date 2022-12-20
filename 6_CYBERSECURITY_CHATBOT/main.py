@@ -1,42 +1,36 @@
+#script load pre-trained model and test in with user input
 import os
-from src.generate_response import chatbot_response
-import pandas as pd
-
 import torch
-import torch.nn as nn
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-import warnings
-warnings.filterwarnings("ignore")
 
 path = os.getcwd()
 
 
 # -------------------------------- LOAD MODEL -------------------------------- #
-# Load the trained model from disk
-model = AutoModelForCausalLM.from_pretrained(path + '/models/dialogpt')
-# Initialize the tokenizer and the model dialogpt-large
-tokenizer = AutoTokenizer.from_pretrained(path + '/models/dialogpt')
+# Load the tokenizer and model
+tokenizer = torch.load(path + '/models/tokenizer.pt')
+model = torch.load(path + '/models/model.pt')
 
-
-# Check if a GPU is available
+# Set the device to run on (CPU or GPU)
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
-# Move the model to the device
-model = model.to(device)
+model.to(device)
 
-
-# ---------------------------------- CHATBOT --------------------------------- #
-# Start the chatbot
-model.eval()
-print('Predicting...')
-with torch.no_grad():
-    while True:
-        question = input('Enter your question: ')
-        if question == 'quit':
-            break
-        question = tokenizer.encode(question, return_tensors='pt').to(device)
-        answer = model.generate(question, max_length=100, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
-        print('Answer: {}'.format(tokenizer.decode(answer[0], skip_special_tokens=True)))
-        print('')
+# ------------------------------- TEST THE MODEL ----------------------------- #
+# conversation with the bot
+print('Welcome to the Cybersecurity FAQ chatbot. Type "quit" to exit.')
+while True:
+     # get user input
+     user_input = input('Q: ')
+     # check if user wants to quit
+     if user_input.lower() == 'quit':
+          print('Bye!')
+          break
+     # encode user input
+     encoded = tokenizer.encode(user_input, add_special_tokens=True, pad_to_max_length=True, truncation=True, max_length=512)
+     # convert to tensor
+     input_ids = torch.tensor(encoded).unsqueeze(0).to(device)
+     # generate response
+     response = model.generate(input_ids, max_length=512, pad_token_id=tokenizer.eos_token_id)
+     # decode response
+     print('A:', tokenizer.decode(response[0], skip_special_tokens=True))
