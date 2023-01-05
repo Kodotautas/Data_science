@@ -40,13 +40,13 @@ data['day_of_year'] = data['Datetime'].dt.dayofyear
 data['is_weekend'] = data['Datetime'].dt.dayofweek.isin([5, 6]).astype(int)
 
 # moving average hourly for 30 days
-data['GV kwh_30d'] = data['b2b+b2c+vt'].rolling(30*24).mean().shift(24)
-data['VT kwh_30d'] = data['VT kwh'].rolling(30*24).mean().shift(24)
-data['GV+VT_30d'] = data['GV+VT'].rolling(30*24).mean().shift(24)
-data['b2b+b2c+vt_7d'] = data['b2b+b2c+vt'].shift(24)
-data['gv_atidavimas_i_tinkla_mwh B2B_7d'] = data['gv_atidavimas_i_tinkla_mwh B2B'].shift(24)
-data['gv_atidavimas_i_tinkla_mwh B2C_7d'] = data['gv_atidavimas_i_tinkla_mwh B2C'].shift(24)
-data['gv_atidavimas_i_tinkla_mwh_7d'] = data['gv_atidavimas_i_tinkla_mwh'].shift(24)
+data['GV kwh_30d'] = data['b2b+b2c+vt'].rolling(30*24).mean().shift(30*24)
+data['VT kwh_30d'] = data['VT kwh'].rolling(30*24).mean().shift(30*24)
+data['GV+VT_30d'] = data['GV+VT'].rolling(30*24).mean().shift(30*24)
+data['b2b+b2c+vt_1d'] = data['b2b+b2c+vt'].shift(24)
+data['gv_atidavimas_i_tinkla_mwh B2B_1d'] = data['gv_atidavimas_i_tinkla_mwh B2B'].shift(24)
+data['gv_atidavimas_i_tinkla_mwh B2C_1d'] = data['gv_atidavimas_i_tinkla_mwh B2C'].shift(24)
+data['gv_atidavimas_i_tinkla_mwh_1d'] = data['gv_atidavimas_i_tinkla_mwh'].shift(24)
 
 # drop columns
 c = ['gv_atidavimas_i_tinkla_mwh B2B', 'gv_atidavimas_i_tinkla_mwh B2C', 'gv_atidavimas_i_tinkla_mwh', 'Skirtumas ']

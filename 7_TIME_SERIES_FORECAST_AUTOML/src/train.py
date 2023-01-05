@@ -63,9 +63,20 @@ predictions = predict_model(final_model, data=test)
 
 # plot predictions
 predictions[['b2b+b2c+vt', 'prediction_label']].plot(figsize=(15, 5))
+plt.savefig(f'{cwd}/outputs/predictions.png')
 plt.show()
 
-print('Model created successfully!')
+# calculate error and plot
+predictions['error'] = predictions['b2b+b2c+vt'] - predictions['prediction_label']
+predictions['error'].plot(figsize=(15, 5))
+plt.savefig(f'{cwd}/outputs/error.png')
+plt.show()
+
+# ------------------------------- EVALUATE MODEL ------------------------------- #
+# evaluate model
+print('Evaluating model...')
+evaluate_model(final_model)
+
 
 # ------------------------------- EXPORT MODEL ------------------------------- #
 save_model(final_model, f'{cwd}/models/final_model.pkl')
